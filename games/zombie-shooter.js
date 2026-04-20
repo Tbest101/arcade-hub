@@ -52,6 +52,7 @@ const ZombieShooter = (() => {
     };
 
     let screenShake = 0;
+    let recoilTimer = 0;
 
     /* ---------- LIFECYCLE ---------- */
 
@@ -100,6 +101,7 @@ const ZombieShooter = (() => {
         entities = { bullets: [], zombies: [], arsenalItems: [], multipliers: [], particles: [], bloodSplatters: [] };
         timers = { fire: 0, zombieSpawn: 0, arsenalSpawn: 0 };
         screenShake = 0;
+        recoilTimer = 0;
     }
 
     /* ---------- UI SETUP ---------- */
@@ -164,6 +166,7 @@ const ZombieShooter = (() => {
         if (timers.fire >= weapon.rate) {
             fire(weapon);
             timers.fire = 0;
+            recoilTimer = 120;
         }
 
         updateSpawning(dt);
@@ -172,6 +175,8 @@ const ZombieShooter = (() => {
 
         if (screenShake > 0) screenShake -= dt * 0.05;
         if (screenShake < 0) screenShake = 0;
+        if (recoilTimer > 0) recoilTimer -= dt;
+        if (recoilTimer < 0) recoilTimer = 0;
 
         document.getElementById('zs-score-val').textContent = score;
         document.getElementById('zs-weapon-val').textContent = weapon.name;
@@ -217,7 +222,10 @@ const ZombieShooter = (() => {
                 health: health,
                 maxHealth: health,
                 speed: 0.04 + Math.random() * 0.04 + (score / 12000),
-                rotation: Math.PI
+                rotation: Math.PI,
+                phase: Math.random() * Math.PI * 2,
+                lurchSpeed: 0.002 + Math.random() * 0.003,
+                swayAmp: 0.15 + Math.random() * 0.2
             });
             timers.zombieSpawn = 0;
         }
@@ -261,9 +269,13 @@ const ZombieShooter = (() => {
         });
 
         entities.zombies.forEach(z => {
-            z.y += z.speed * dt;
-            // Subtle wiggle
-            z.rotation = Math.PI + Math.sin(Date.now() / 200) * 0.1;
+            // Lurching movement — speed oscillates for shambling gait
+            const lurchFactor = 1 + Math.sin(Date.now() * z.lurchSpeed + z.phase) * 0.5;
+            z.y += z.speed * dt * lurchFactor;
+            // Lateral drift — zombies sway side to side
+            z.x += Math.sin(Date.now() * 0.001 + z.phase) * 0.15 * dt;
+            // Rotation sway — torso rocking
+            z.rotation = Math.PI + Math.sin(Date.now() * 0.003 + z.phase) * z.swayAmp;
             if (z.y + z.size > canvas.height - 60) gameOver();
         });
 
@@ -421,13 +433,22 @@ const ZombieShooter = (() => {
             ctx.save();
             ctx.translate(z.x + z.size/2, z.y + z.size/2);
             ctx.rotate(z.rotation);
+            // Breathing / pulse scale
+            const pulse = 1 + Math.sin(Date.now() * 0.005 + z.phase) * 0.05;
+            ctx.scale(pulse, 1 / pulse);
+            // Hit flash — briefly brighten when damaged
+            const hurtRatio = z.health / z.maxHealth;
+            if (hurtRatio < 0.5) {
+                ctx.globalAlpha = 0.6 + Math.sin(Date.now() * 0.02) * 0.4;
+            }
             ctx.drawImage(assets.zombie, -z.size/2, -z.size/2, z.size, z.size);
+            ctx.globalAlpha = 1;
             ctx.restore();
             // Health Bar
             ctx.fillStyle = 'rgba(0,0,0,0.5)';
             ctx.fillRect(z.x, z.y - 10, z.size, 4);
-            ctx.fillStyle = '#ef4444';
-            ctx.fillRect(z.x, z.y - 10, z.size * (z.health / z.maxHealth), 4);
+            ctx.fillStyle = hurtRatio > 0.5 ? '#ef4444' : '#ff6b6b';
+            ctx.fillRect(z.x, z.y - 10, z.size * hurtRatio, 4);
         });
 
         // Draw Arsenal
@@ -480,10 +501,23 @@ const ZombieShooter = (() => {
         // Draw Shooters
         const spacing = 40;
         const startX = mouseX - ((shooterCount - 1) * spacing) / 2;
+        const now = Date.now();
         for (let i = 0; i < shooterCount; i++) {
             const x = startX + i * spacing;
+            const phase = i * 0.7;
             ctx.save();
-            ctx.translate(x, canvas.height - 40);
+
+            // Breathing bob — gentle float up/down
+            const breathY = Math.sin(now * 0.003 + phase) * 3;
+            // Idle sway — slight lean
+            const swayAngle = Math.sin(now * 0.002 + phase) * 0.06;
+            // Recoil — kick back when firing
+            const recoilY = recoilTimer > 0 ? -recoilTimer * 0.04 : 0;
+            const recoilScale = recoilTimer > 0 ? 1 + recoilTimer * 0.001 : 1;
+
+            ctx.translate(x, canvas.height - 40 + breathY + recoilY);
+            ctx.rotate(swayAngle);
+            ctx.scale(recoilScale, recoilScale);
             ctx.drawImage(assets.survivor, -20, -20, 40, 40);
             ctx.restore();
         }
