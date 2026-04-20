@@ -10,11 +10,11 @@
 const ZombieShooter = (() => {
     // Config
     const WEAPONS = [
-        { id: 'pistol', name: 'PISTOL', cost: 0, damage: 1, rate: 450, spread: 0, count: 1 },
-        { id: 'dual', name: 'DUAL 9MM', cost: 15, damage: 1, rate: 300, spread: 2, count: 2 },
-        { id: 'smg', name: 'TACTICAL SMG', cost: 45, damage: 1.2, rate: 120, spread: 8, count: 1 },
-        { id: 'shotgun', name: '12-GAUGE', cost: 120, damage: 1.5, rate: 700, spread: 35, count: 5 },
-        { id: 'ar', name: 'ASSAULT RIFLE', cost: 300, damage: 3, rate: 200, spread: 4, count: 1 }
+        { id: 'pistol', name: 'PISTOL', cost: 0, damage: 1, rate: 120, spread: 6, count: 3 },
+        { id: 'dual', name: 'DUAL 9MM', cost: 15, damage: 1, rate: 80, spread: 10, count: 5 },
+        { id: 'smg', name: 'TACTICAL SMG', cost: 45, damage: 1.2, rate: 40, spread: 15, count: 4 },
+        { id: 'shotgun', name: '12-GAUGE', cost: 120, damage: 1.5, rate: 180, spread: 45, count: 10 },
+        { id: 'ar', name: 'ASSAULT RIFLE', cost: 300, damage: 3, rate: 50, spread: 12, count: 6 }
     ];
 
     // State
