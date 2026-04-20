@@ -194,8 +194,8 @@ const ZombieShooter = (() => {
                 entities.bullets.push({
                     x: subX,
                     y: canvas.height - 70,
-                    vx: Math.sin(angle) * 2.5,
-                    vy: -2.5,
+                    vx: Math.sin(angle) * 6,
+                    vy: -6,
                     damage: weapon.damage
                 });
             }
